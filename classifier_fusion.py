@@ -86,6 +86,24 @@ class ClassifierFusion:
 
         
         return (weightPerClassifier, fusionProba)
+    
+
+    def predict_proba (self, X_test):
+        """Return class probabilities"""
+        probaPerClassifier = [] # n_classifier * n_sample * n_class
+        for classifier in self.classifiers:
+            proba = classifier.predict_proba(X_test)
+            probaPerClassifier.append(proba)
+        
+        # weight the proba with classifier weights
+        if self.weightPerClassfier is None:
+            raise SyntaxError("Unknown weights, please call fit first")
+        
+        weightedProba = probaPerClassifier * self.weightPerClassfier.reshape(-1, 1, 1)
+        fusedProba = np.sum(weightedProba, axis= 0)
+
+        return fusedProba   # n_sample * n_class
+
 
     def getFusedEvaluationCriteriaValues (self):
         """Return the weighted value of evalutation criteria values according to model weights"""
