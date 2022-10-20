@@ -35,7 +35,7 @@ class ClassifierFusion:
         fusion probabilities for each class for each sample in X_val
         """
         ec_matrix = []          # n_classifier * n_ec
-        probaPerClassifier = [] # n_sample * n_class * n_classifier
+        probaPerClassifier = [] # n_classifier * n_sample * n_class
 
         for classifier in self.classifiers:
             y_pred = classifier.predict(X_val)         # n_sample
@@ -117,10 +117,13 @@ class ClassifierFusion:
         return fusionECVals
 
 
-    ## TODO
     def normalize_and_scale (self, ec_matrix: np.ndarray):
         """normalize and scale by weights"""
-        return ec_matrix
+        norm_vector = np.linalg.norm(ec_matrix, axis= 0)
+        normalized_ec_matrix = ec_matrix/norm_vector
+        scaled_ec_matrix = normalized_ec_matrix * self.ec_weights.reshape(-1, 1)
+        return scaled_ec_matrix
+
 
     def setFusionWeights (self, weightsPerClassifier: np.ndarray):
         self.weightPerClassfier = weightsPerClassifier

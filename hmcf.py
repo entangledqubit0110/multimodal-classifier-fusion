@@ -140,4 +140,7 @@ class HMCF:
     ## TODO
     def normalize_and_scale (self, ec_matrix: np.ndarray):
         """normalize and scale by weights"""
-        return ec_matrix
+        norm_vector = np.linalg.norm(ec_matrix, axis= 0)
+        normalized_ec_matrix = ec_matrix/norm_vector
+        scaled_ec_matrix = normalized_ec_matrix * self.ec_weights.reshape(-1, 1)
+        return scaled_ec_matrix
