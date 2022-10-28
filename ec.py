@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
 
-
 class EvaluationCriteria (ABC):
     """An abstract class under which all evaluation cirterias are defined"""
 
@@ -23,6 +22,7 @@ class ROC_AUC (EvaluationCriteria):
 
     def getValue(self, y_true, y_pred, proba):
         return roc_auc_score(y_true= y_true, y_score= proba)
+        
 
 class Specificity (EvaluationCriteria):
 

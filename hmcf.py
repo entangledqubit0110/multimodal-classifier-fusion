@@ -78,8 +78,8 @@ class HMCF:
         kfoldProba = []         # k * n_sample * n_class
 
         for train_index, val_index in kf.split(X, y):
-            X_train, X_val = X[train_index], X[val_index]
-            y_train, y_val = y[train_index], y[val_index]
+            X_train, X_val = X.iloc[train_index], X.iloc[val_index]
+            y_train, y_val = y.iloc[train_index], y.iloc[val_index]
             # fit the mcf
             mcf.fit(X_train, y_train)
             # use val set to get weights
@@ -91,7 +91,7 @@ class HMCF:
             kfoldECValues.append(ecVals)
         
         kfoldWeights = np.array(kfoldWeights)
-        kfoldECValues = np.array(kfoldWeights)
+        kfoldECValues = np.array(kfoldECValues)
 
         # get EC values for this modality
         # average over k folds
@@ -142,5 +142,5 @@ class HMCF:
         """normalize and scale by weights"""
         norm_vector = np.linalg.norm(ec_matrix, axis= 0)
         normalized_ec_matrix = ec_matrix/norm_vector
-        scaled_ec_matrix = normalized_ec_matrix * self.ec_weights.reshape(-1, 1)
+        scaled_ec_matrix = normalized_ec_matrix * self.ec_weights
         return scaled_ec_matrix

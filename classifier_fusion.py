@@ -10,11 +10,11 @@ class ClassifierFusion:
         # sanity checking for passed params
         for c in classifiers:
             if not (hasattr(c, 'fit')) and callable(getattr(c, 'fit')):
-                raise TypeError("Classifier expected to have fit method")
+                raise TypeError(f"Classifier {c} expected to have fit method")
             if not (hasattr(c, 'predict') and callable(getattr(c, 'predict'))):
-                raise TypeError("Classifier expected to have predict method")
+                raise TypeError(f"Classifier {c} expected to have predict method")
             if not (hasattr(c, 'predict_proba') and callable(getattr(c, 'predict_proba'))):
-                raise TypeError("Classifier expected to have predict_proba method")
+                raise TypeError(f"Classifier {c} expected to have predict_proba method")
 
 
         self.classifiers = classifiers
@@ -59,11 +59,16 @@ class ClassifierFusion:
         ec_min = np.min(ec_matrix, axis= 0)     # column wise min
         ec_max = np.max(ec_matrix, axis= 0)     # column wise max
 
+
         weightPerClassifier = []    # n_classifier
         for i in range(len(self.classifiers)):
             dis_from_max = np.linalg.norm(ec_matrix[i] - ec_max)
             dis_from_min = np.linalg.norm(ec_matrix[i] - ec_min)
-            wt = dis_from_min/(dis_from_min + dis_from_max)
+            # avoid division by zero
+            if dis_from_min + dis_from_max != 0:
+                wt = dis_from_min/(dis_from_min + dis_from_max)
+            else:
+                wt = 1/len(self.classifiers)
             weightPerClassifier.append(wt)
 
         # normalize weights
@@ -81,8 +86,9 @@ class ClassifierFusion:
             fusionProba = fusionProba + proba
         
         assert len(fusionProba) == len(X_val)
-        for row in fusionProba:
-            assert np.sum(row) <= 1
+        # TODO
+        # for row in fusionProba:
+        #     assert np.sum(row) <= 1
 
         
         return (weightPerClassifier, fusionProba)
@@ -120,8 +126,13 @@ class ClassifierFusion:
     def normalize_and_scale (self, ec_matrix: np.ndarray):
         """normalize and scale by weights"""
         norm_vector = np.linalg.norm(ec_matrix, axis= 0)
+        # avoid divison by zero
+        for idx in range(len(norm_vector)):
+            if norm_vector[idx] == 0:
+                norm_vector[idx] += 0.000001
+        
         normalized_ec_matrix = ec_matrix/norm_vector
-        scaled_ec_matrix = normalized_ec_matrix * self.ec_weights.reshape(-1, 1)
+        scaled_ec_matrix = normalized_ec_matrix * self.ec_weights   # multiply each column by ec wt
         return scaled_ec_matrix
 
 
