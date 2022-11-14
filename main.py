@@ -13,12 +13,12 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.linear_model import LinearRegression
 
 
-modalityNames = ["ECO", "SOC", "HMC", "NAP"]
+modalityNames = ["ECO", "SOC", "HMC", "NAC"]
 modalityCols =  {
                     "ECO": ["PCI", "POV", "DIV", "MIG"],
                     "SOC": ["PHC", "MGA", "SHG", "PEN"],
                     "HMC": ["ILT", "LIT", "SKL"],
-                    "NAP": ["FOR", "WAT", "GRZ"]
+                    "NAC": ["FOR", "WAT", "GRZ"]
                 }
 
 dataPath = "./fusion_primary_data.csv"
@@ -41,8 +41,8 @@ heuristic_weights = np.array(heuristic_weights)/np.sum(heuristic_weights)
 
 
 # wts, dfLabeled = label(dfProcessed, weights="random")
-wts, dfLabeled = label(dfProcessed, weights="uniform")
-# wts, dfLabeled = label(dfProcessed, weights=heuristic_weights)
+# wts, dfLabeled = label(dfProcessed, weights="uniform")
+wts, dfLabeled = label(dfProcessed, weights=heuristic_weights)
 # print(wts)
 print(dfLabeled)
 
@@ -72,9 +72,26 @@ hmcf = HMCF(classifiers= classifiers, evaluation_criterias= ecs,
 yList = [y]*len(dfList)
 modalityNames = ["ECO", "SOC", "HMC", "NAC"]
 hmcf.fit(XList= dfList, yList=yList, modalityNames= modalityNames)
-print(hmcf.weightPerModality)
-for mcf in hmcf.mcfs:
-    print(mcf.weightPerClassfier)
+
+print(f"weights of modalities: {hmcf.weightPerModality}")
+
+for name in modalityNames:
+    print(f"weights in {name}: {hmcf.mcfs[name].weightPerClassfier}")
+
+
+test = X.iloc[:2, :]
+print(test)
+testList = []
+for modality in modalityNames:
+    dfTest = test[modalityCols[modality]]
+    testList.append(dfTest)
+
+# for df in testList:
+#     print(df.head())
+# print(y)
+
+print("----Test----")
+print(hmcf.predict_proba(testList, modalityNames))
 
 lc = LinearRegression()
 lc.fit(X, y)

@@ -66,9 +66,9 @@ def categorize (df: pd.DataFrame):
 
 def label (df: pd.DataFrame, weights):
     """Make labels following the weights"""
-    if weights == "uniform":
+    if isinstance(weights, str) and weights == "uniform":
         weights = np.ones(len(features))/len(features)
-    elif weights == "random":
+    elif isinstance(weights, str) and weights == "random":
         weights = np.random.rand(len(features))
         weights = weights/np.sum(weights)
 

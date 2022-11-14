@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 from typing import Iterable
 from sklearn.model_selection import KFold
 
@@ -28,7 +29,7 @@ class HMCF:
         self.modality_cross_validation = modality_cross_validation  # number of folds for cross validation for a single modality
 
         # intialize
-        self.mcfs = []  # Classifier Fusion objects
+        self.mcfs = {}  # Classifier Fusion objects
         self.modality_ec_matrix = []    # ec_vals for each modality
         self.weightPerModality = None   # weight of each modality
 
@@ -43,7 +44,7 @@ class HMCF:
         probaPerModality = []   # n_modality * n_sample * n_class
         for modality, X, y in zip(modalityNames, XList, yList):
             print(f"Fitting on modality {modality}")
-            modalityProba = self.fitModality(X, y)
+            modalityProba = self.fitModality(X, y, modality)
             probaPerModality.append(modalityProba)
 
         
@@ -68,9 +69,13 @@ class HMCF:
         self.weightPerModality = weightPerModality
 
     
-    def fitModality (self, X, y):
+    def fitModality (self, X, y, modality):
         """Apply fit on a single modality using classifier fusion"""
-        mcf = ClassifierFusion(self.classifiers, self.evaluation_criterias, self.ec_weights)
+        modalityClassifiers = []
+        for c in self.classifiers:
+            modalityClassifiers.append(deepcopy(c))
+        
+        self.mcfs[modality] = ClassifierFusion(modalityClassifiers, self.evaluation_criterias, self.ec_weights)
         kf = KFold(n_splits= self.modality_cross_validation)
 
         kfoldWeights = []       # k * n_classifiers
@@ -81,13 +86,13 @@ class HMCF:
             X_train, X_val = X.iloc[train_index], X.iloc[val_index]
             y_train, y_val = y.iloc[train_index], y.iloc[val_index]
             # fit the mcf
-            mcf.fit(X_train, y_train)
+            self.mcfs[modality].fit(X_train, y_train)
             # use val set to get weights
-            weights, proba = mcf.getFusionWeights(X_val, y_val)
+            weights, proba = self.mcfs[modality].getFusionWeights(X_val, y_val)
             kfoldWeights.append(weights)
             kfoldProba.append(proba)
             # get the fused ec_values of all classfiers from the mcf 
-            ecVals = mcf.getFusedEvaluationCriteriaValues()
+            ecVals = self.mcfs[modality].getFusedEvaluationCriteriaValues()
             kfoldECValues.append(ecVals)
         
         kfoldWeights = np.array(kfoldWeights)
@@ -100,10 +105,7 @@ class HMCF:
         # update the modality specific MCF weights from KFolds
         # average over k folds
         avgWeights = np.average(kfoldWeights, axis= 0)
-        mcf.setFusionWeights(avgWeights)
-
-        # add to the global list
-        self.mcfs.append(mcf)
+        self.mcfs[modality].setFusionWeights(avgWeights)
         
         # get class probabilty values by averaging over k folds
         modalityProba = np.average(kfoldProba, axis= 0)
@@ -120,9 +122,10 @@ class HMCF:
         
 
         probaPerModality = [] # n_modality * n_sample * n_class
-        for idx, modality, X_test in enumerate(zip(modalityNames, X_testList)):
+        for modality, X_test in zip(modalityNames, X_testList):
             print(f"Predicting with modality {modality}")
-            modalityProba = self.mcfs[idx].predict_proba(X_test)
+            print(X_test.columns)
+            modalityProba = self.mcfs[modality].predict_proba(X_test)
             probaPerModality.append(modalityProba)
 
         
