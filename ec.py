@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import numpy as np
 from sklearn.metrics import accuracy_score, roc_auc_score, confusion_matrix
 
 class EvaluationCriteria (ABC):
@@ -21,6 +22,12 @@ class Accuracy (EvaluationCriteria):
 class ROC_AUC (EvaluationCriteria):
 
     def getValue(self, y_true, y_pred, proba):
+        # dimension for binary class
+        if np.shape(proba)[1] == 2:
+            proba = proba[:, 1]
+        # multilabel classification
+        elif np.shape(proba)[1] > 2:
+            raise NotImplementedError("Multilabel cases has not been handled yet")
         return roc_auc_score(y_true= y_true, y_score= proba)
         
 
