@@ -124,7 +124,7 @@ class HMCF:
         probaPerModality = [] # n_modality * n_sample * n_class
         for modality, X_test in zip(modalityNames, X_testList):
             print(f"Predicting with modality {modality}")
-            print(X_test.columns)
+            # print(X_test.columns)
             modalityProba = self.mcfs[modality].predict_proba(X_test)
             probaPerModality.append(modalityProba)
 
